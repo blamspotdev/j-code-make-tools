@@ -1,0 +1,25 @@
+{
+  "name": "j-code-make-tools",
+  "version": "1.0.0",
+  "description": "JCode extension making tools — compile an extension folder into a .jext package and validate its .jehm header.",
+  "bin": {
+    "jext": "bin/jext.js"
+  },
+  "type": "commonjs",
+  "files": [
+    "bin",
+    "src",
+    "docs"
+  ],
+  "scripts": {
+    "test": "node test/run.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "js-yaml": "^4.1.0"
+  },
+  "license": "MIT"
+}

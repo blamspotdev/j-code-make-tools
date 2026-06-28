@@ -1,0 +1,6 @@
+node_modules/
+*.log
+.DS_Store
+# Local build output
+out/
+*.jext
