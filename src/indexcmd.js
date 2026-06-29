@@ -61,6 +61,7 @@ function index(marketplaceDir, opts = {}) {
     const entry = {
       uniqueName: header.uniqueName,
       name: header.name,
+      publisher: header.publisher || null,
       type: header.type,
       version: header.version,
       category: header.category || null,
