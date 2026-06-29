@@ -74,6 +74,22 @@ function index(marketplaceDir, opts = {}) {
     if (header.requires) entry.requires = header.requires;
     if (header.suggests) entry.suggests = header.suggests;
     if (header.images) entry.images = header.images;
+    // Publish the package icon out to dist/icons/ so the app can show it before install
+    // (the rest of the package's media only exists inside the .jext).
+    if (header.images && header.images.icon) {
+      const iconRel = header.images.icon;
+      const iconEntry = zip.getEntry(iconRel);
+      if (iconEntry) {
+        const ext = path.extname(iconRel) || '.png';
+        const iconsDir = path.join(distDir, 'icons');
+        fs.mkdirSync(iconsDir, { recursive: true });
+        const iconName = `${header.uniqueName}${ext}`;
+        fs.writeFileSync(path.join(iconsDir, iconName), iconEntry.getData());
+        entry.icon = `${distName}/icons/${iconName}`;
+      } else {
+        warn(`${file}: images.icon "${iconRel}" not found in package`);
+      }
+    }
     extensions.push(entry);
     step(`indexed ${header.uniqueName} ${header.version}`);
   }
