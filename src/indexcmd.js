@@ -74,6 +74,8 @@ function index(marketplaceDir, opts = {}) {
     };
     if (header.requires) entry.requires = header.requires;
     if (header.suggests) entry.suggests = header.suggests;
+    if (header.supportedDistros) entry.supportedDistros = header.supportedDistros;
+    if (header.supportedArches) entry.supportedArches = header.supportedArches;
     if (header.images) entry.images = header.images;
     // Publish the package icon out to dist/icons/ so the app can show it before install
     // (the rest of the package's media only exists inside the .jext).

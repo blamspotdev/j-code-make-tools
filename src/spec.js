@@ -11,7 +11,7 @@ const JEXT_FORMAT = 1;
 
 // Extension types the marketplace/app understands. `language` and `templates`
 // are functional today; the rest are reserved for forward compatibility.
-const EXTENSION_TYPES = ['language', 'templates', 'formatter', 'theme', 'icons'];
+const EXTENSION_TYPES = ['language', 'templates', 'formatter', 'theme', 'icons', 'app', 'dbmanager'];
 
 // Frontmatter fields that must be present and non-empty.
 const REQUIRED_FIELDS = [
@@ -23,6 +23,24 @@ const REQUIRED_FIELDS = [
   'shortDescription',
   'minJCodeVersion',
   'targetJCodeVersion',
+];
+
+// Optional frontmatter fields the toolchain recognizes. `supportedDistros` /
+// `supportedArches` declare which distro ids / arch keys ("arm64", "amd64") an
+// extension supports; absent/empty means "every distro/arch". They flow through
+// `jext index` into the marketplace so the app can gate availability by the
+// active environment. Validation does not reject unlisted fields.
+const OPTIONAL_FIELDS = [
+  'publisher',
+  'category',
+  'subcategory',
+  'supportedDistros',
+  'supportedArches',
+  'requires',
+  'suggests',
+  'images',
+  'entry',
+  'fingerprint',
 ];
 
 // Files never included in a .jext package.
@@ -41,5 +59,6 @@ module.exports = {
   JEXT_FORMAT,
   EXTENSION_TYPES,
   REQUIRED_FIELDS,
+  OPTIONAL_FIELDS,
   ALWAYS_IGNORE,
 };
