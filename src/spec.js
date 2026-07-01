@@ -32,6 +32,7 @@ const REQUIRED_FIELDS = [
 // active environment. Validation does not reject unlisted fields.
 const OPTIONAL_FIELDS = [
   'publisher',
+  'authors',
   'category',
   'subcategory',
   'supportedDistros',

@@ -72,6 +72,7 @@ function index(marketplaceDir, opts = {}) {
       jext: `${distName}/${file}`,
       fingerprint: fingerprint,
     };
+    if (header.authors) entry.authors = header.authors;
     if (header.requires) entry.requires = header.requires;
     if (header.suggests) entry.suggests = header.suggests;
     if (header.supportedDistros) entry.supportedDistros = header.supportedDistros;
