@@ -37,7 +37,7 @@ Rich description here. ![Sample](media/sample-1.png)
 | `uniqueName` | ✓ | string | Globally-unique reverse-DNS id, lower-case, e.g. `jcode.lang.csharp`. The on-device install id. |
 | `name` | ✓ | string | Human display name. |
 | `version` | ✓ | semver | The extension's own version (`major.minor.patch`). |
-| `type` | ✓ | enum | `language` \| `templates` \| `formatter` \| `theme` \| `icons`. |
+| `type` | ✓ | enum | `language` \| `templates` \| `app` \| `dbmanager` \| `formatter` \| `theme` \| `icons`. |
 | `shortDescription` | ✓ | string | One line for list rows. |
 | `minJCodeVersion` | ✓ | semver | Lowest JCode app version that can run this. |
 | `targetJCodeVersion` | ✓ | semver | JCode version this was built/tested against. |
@@ -55,6 +55,6 @@ Rich description here. ![Sample](media/sample-1.png)
 
 ## Why "and more"
 
-`type`, `images.walkthrough`, `entry.ui`, and `entry.libs` are the forward-looking
+`images.walkthrough` and `entry.libs` are the forward-looking
 hooks: extensions may ship their own UI and libraries. Unknown extra frontmatter
 keys are preserved by the tools and ignored by older readers.

@@ -18,7 +18,7 @@ Usage:
   jext index <marketplaceDir> [--dist <folder>]     Regenerate marketplace.yaml from packed .jext files
   jext help | --version
 
-Types: language, templates, formatter, theme, icons
+Types: language, templates, app, dbmanager, formatter, theme, icons
 `;
 
 // Tiny flag parser: collects --key value / --key=value into flags, the rest into positionals.
