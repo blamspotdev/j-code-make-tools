@@ -11,14 +11,15 @@ const pkg = require('../package.json');
 const USAGE = `jext — JCode extension make tools (v${pkg.version})
 
 Usage:
-  jext pack <extensionDir> [-o <out.jext|outDir>]   Compile an extension folder into a .jext
+  jext pack <extensionDir> [-o <out.jext|outDir>] [--no-build]
+                                                    Build (npm run build, if any) + compile into a .jext
   jext validate <extensionDir|file.jext>            Validate a .jehm header or a built .jext
   jext init [dir] [--type <t>] [--name <n>] [--id <uniqueName>] [--publisher <p>]
                                                     Scaffold a new extension (.jehm + manifest)
   jext index <marketplaceDir> [--dist <folder>]     Regenerate marketplace.yaml from packed .jext files
   jext help | --version
 
-Types: language, templates, app, dbmanager, formatter, theme, icons
+Types: language, templates, app, dbmanager, scm, vm, formatter, theme, icons
 `;
 
 // Tiny flag parser: collects --key value / --key=value into flags, the rest into positionals.
@@ -66,7 +67,7 @@ function main() {
   switch (cmd) {
     case 'pack': {
       if (!positionals[0]) throw new CliError('pack: missing <extensionDir>');
-      pack(positionals[0], { out: flags.out });
+      pack(positionals[0], { out: flags.out, noBuild: flags['no-build'] === true });
       break;
     }
     case 'validate': {

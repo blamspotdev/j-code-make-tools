@@ -2,10 +2,78 @@
 
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 const AdmZip = require('adm-zip');
-const jehm = require('./jehm');
-const { JEHM_FILE, JEXT_MANIFEST, JEXT_FORMAT, ALWAYS_IGNORE } = require('./spec');
+const yaml = require('js-yaml');
+const { JEXT_MANIFEST, JEXT_FORMAT, EXTENSION_TYPES, ALWAYS_IGNORE } = require('./spec');
 const { sha256, sha256File, walkFiles, fail, step, ok, warn } = require('./util');
+
+// The extension header now lives in extension.yaml (the .jehm file was retired). Normalize the fields
+// the package manifest + marketplace need. `id` is the install id (formerly `uniqueName`).
+function readHeader(extDir) {
+  const yamlPath = path.join(extDir, 'extension.yaml');
+  if (!fs.existsSync(yamlPath)) {
+    fail(`no extension.yaml at the extension root (${extDir}). Run "jext init" to create one.`);
+  }
+  let y;
+  try {
+    y = yaml.load(fs.readFileSync(yamlPath, 'utf8')) || {};
+  } catch (e) {
+    fail(`extension.yaml is not valid YAML: ${e.message}`);
+  }
+  return {
+    uniqueName: y.id || y.uniqueName,
+    name: y.name,
+    version: y.version,
+    type: y.type,
+    publisher: y.publisher,
+    authors: y.authors,
+    shortDescription: y.shortDescription || y.description,
+    minJCodeVersion: y.minJCodeVersion,
+    targetJCodeVersion: y.targetJCodeVersion,
+    category: y.category,
+    subcategory: y.subcategory,
+    supportedArches: y.supportedArches,
+    supportedDistros: y.supportedDistros,
+    images: y.images,
+    entry: y.entry,
+  };
+}
+
+function validateHeader(h) {
+  const errs = [];
+  for (const k of ['uniqueName', 'name', 'version', 'type']) {
+    if (!h[k]) errs.push(`missing required field "${k === 'uniqueName' ? 'id' : k}"`);
+  }
+  if (h.type && !EXTENSION_TYPES.includes(h.type)) errs.push(`unknown type "${h.type}" (allowed: ${EXTENSION_TYPES.join(', ')})`);
+  return errs;
+}
+
+// If the extension declares a `build` script (package.json), run it for production before packing.
+// Extensions author their UI in TypeScript under src/ and emit the deployable www/ here; the source
+// and build config are excluded from the package by ALWAYS_IGNORE. Skip with `--no-build`.
+function runBuild(extDir) {
+  const pkgPath = path.join(extDir, 'package.json');
+  if (!fs.existsSync(pkgPath)) return;
+  let pkg;
+  try {
+    pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  } catch (e) {
+    fail(`package.json is not valid JSON: ${e.message}`);
+  }
+  if (!pkg.scripts || !pkg.scripts.build) return;
+
+  const win = process.platform === 'win32';
+  if (!fs.existsSync(path.join(extDir, 'node_modules'))) {
+    step('installing build dependencies (npm install)…');
+    const i = spawnSync('npm', ['install', '--no-audit', '--no-fund'], { cwd: extDir, stdio: 'inherit', shell: win });
+    if (i.status !== 0) fail('npm install failed');
+  }
+  step('building extension for production (npm run build)…');
+  const b = spawnSync('npm', ['run', 'build'], { cwd: extDir, stdio: 'inherit', shell: win });
+  if (b.status !== 0) fail('extension build (npm run build) failed');
+  ok('production build complete');
+}
 
 function readJextIgnore(extDir) {
   const p = path.join(extDir, '.jextignore');
@@ -22,16 +90,14 @@ function pack(extDir, opts = {}) {
   if (!fs.existsSync(extDir) || !fs.statSync(extDir).isDirectory()) {
     fail(`not a directory: ${extDir}`);
   }
-  const jehmPath = path.join(extDir, JEHM_FILE);
-  if (!fs.existsSync(jehmPath)) {
-    fail(`no ${JEHM_FILE} at the extension root (${extDir}). Run "jext init" to create one.`);
+  const header = readHeader(extDir);
+  const errs = validateHeader(header);
+  if (errs.length) {
+    fail(`extension.yaml header is invalid:\n  - ${errs.join('\n  - ')}`);
   }
 
-  const { header } = jehm.parseFile(jehmPath);
-  const errs = jehm.validateHeader(header);
-  if (errs.length) {
-    fail(`${JEHM_FILE} is invalid:\n  - ${errs.join('\n  - ')}`);
-  }
+  // Produce the deployable www/ from TypeScript source before we collect files.
+  if (!opts.noBuild) runBuild(extDir);
 
   // Functional payload + referenced asset checks.
   const manifestRel = (header.entry && header.entry.manifest) || 'extension.yaml';
@@ -48,7 +114,7 @@ function pack(extDir, opts = {}) {
 
   const ignore = ALWAYS_IGNORE.concat(readJextIgnore(extDir));
   const files = walkFiles(extDir, ignore).filter((rel) => !rel.endsWith('.jext'));
-  if (!files.includes(JEHM_FILE)) fail(`internal: ${JEHM_FILE} was excluded from the package`);
+  if (!files.includes('extension.yaml')) fail('internal: extension.yaml was excluded from the package');
 
   step(`packing ${files.length} files from ${path.basename(extDir)}`);
 
