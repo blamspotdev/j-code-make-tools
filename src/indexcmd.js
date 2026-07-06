@@ -37,27 +37,46 @@ function index(marketplaceDir, opts = {}) {
 
   const extensions = [];
   for (const file of jexts) {
-    const zip = new AdmZip(path.join(distDir, file));
-    const jehmEntry = zip.getEntry(JEHM_FILE);
-    if (!jehmEntry) {
-      warn(`${file}: no ${JEHM_FILE} — skipped`);
-      continue;
-    }
-    const { header } = jehm.parse(zip.readAsText(jehmEntry), `${file}!${JEHM_FILE}`);
-    const errs = jehm.validateHeader(header);
-    if (errs.length) {
-      warn(`${file}: invalid header (${errs[0]}) — skipped`);
-      continue;
-    }
+    const buf = fs.readFileSync(path.join(distDir, file));
+    let header;
     let fingerprint = null;
-    const manEntry = zip.getEntry(JEXT_MANIFEST);
-    if (manEntry) {
-      try {
-        fingerprint = (JSON.parse(zip.readAsText(manEntry)).fingerprint) || null;
-      } catch (_) {
-        /* ignore */
+    let iconRel = null;
+    let iconBytes = null;
+
+    if (buf.length > 9 && buf.subarray(0, 4).toString('ascii') === 'JEXT' && buf[4] === 2) {
+      // Signed + encrypted (format 2): the CLEAR header carries the marketplace metadata + icon,
+      // so we can index without the AES key.
+      const headerLen = buf.readUInt32BE(5);
+      header = JSON.parse(buf.subarray(9, 9 + headerLen).toString('utf8'));
+      fingerprint = header.packageFingerprint ? { algo: 'sha256', value: header.packageFingerprint } : null;
+      iconRel = (header.images && header.images.icon) || 'media/icon.png';
+      iconBytes = header.icon ? Buffer.from(header.icon, 'base64') : null;
+    } else {
+      // Plain zip (format 1): prefer the merged extension.yaml, fall back to a legacy extension.jehm.
+      const zip = new AdmZip(buf);
+      const yEntry = zip.getEntry('extension.yaml');
+      if (yEntry) {
+        const y = yaml.load(zip.readAsText(yEntry)) || {};
+        header = {
+          uniqueName: y.id || y.uniqueName, name: y.name, version: y.version, type: y.type,
+          publisher: y.publisher, authors: y.authors, shortDescription: y.shortDescription || y.description,
+          minJCodeVersion: y.minJCodeVersion, targetJCodeVersion: y.targetJCodeVersion,
+          category: y.category, subcategory: y.subcategory, supportedArches: y.supportedArches,
+          supportedDistros: y.supportedDistros, images: y.images, requires: y.requires, suggests: y.suggests,
+        };
+      } else {
+        const jEntry = zip.getEntry(JEHM_FILE);
+        if (!jEntry) { warn(`${file}: no extension.yaml or ${JEHM_FILE} — skipped`); continue; }
+        header = jehm.parse(zip.readAsText(jEntry), `${file}!${JEHM_FILE}`).header;
       }
+      const manEntry = zip.getEntry(JEXT_MANIFEST);
+      if (manEntry) { try { fingerprint = JSON.parse(zip.readAsText(manEntry)).fingerprint || null; } catch (_) { /* ignore */ } }
+      iconRel = (header.images && header.images.icon) || 'media/icon.png';
+      const iEntry = zip.getEntry(iconRel);
+      iconBytes = iEntry ? iEntry.getData() : null;
     }
+
+    if (!header || !header.uniqueName) { warn(`${file}: no id/uniqueName — skipped`); continue; }
     const entry = {
       uniqueName: header.uniqueName,
       name: header.name,
@@ -80,19 +99,15 @@ function index(marketplaceDir, opts = {}) {
     if (header.images) entry.images = header.images;
     // Publish the package icon out to dist/icons/ so the app can show it before install
     // (the rest of the package's media only exists inside the .jext).
-    if (header.images && header.images.icon) {
-      const iconRel = header.images.icon;
-      const iconEntry = zip.getEntry(iconRel);
-      if (iconEntry) {
-        const ext = path.extname(iconRel) || '.png';
-        const iconsDir = path.join(distDir, 'icons');
-        fs.mkdirSync(iconsDir, { recursive: true });
-        const iconName = `${header.uniqueName}${ext}`;
-        fs.writeFileSync(path.join(iconsDir, iconName), iconEntry.getData());
-        entry.icon = `${distName}/icons/${iconName}`;
-      } else {
-        warn(`${file}: images.icon "${iconRel}" not found in package`);
-      }
+    if (iconBytes) {
+      const ext = path.extname(iconRel || '') || '.png';
+      const iconsDir = path.join(distDir, 'icons');
+      fs.mkdirSync(iconsDir, { recursive: true });
+      const iconName = `${header.uniqueName}${ext}`;
+      fs.writeFileSync(path.join(iconsDir, iconName), iconBytes);
+      entry.icon = `${distName}/icons/${iconName}`;
+    } else if (iconRel) {
+      warn(`${file}: icon "${iconRel}" not found in package`);
     }
     extensions.push(entry);
     step(`indexed ${header.uniqueName} ${header.version}`);

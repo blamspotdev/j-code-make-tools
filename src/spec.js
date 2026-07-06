@@ -11,7 +11,7 @@ const JEXT_FORMAT = 1;
 
 // Extension types the marketplace/app understands. `language` and `templates`
 // are functional today; the rest are reserved for forward compatibility.
-const EXTENSION_TYPES = ['language', 'templates', 'formatter', 'theme', 'icons', 'app', 'dbmanager'];
+const EXTENSION_TYPES = ['language', 'templates', 'formatter', 'theme', 'icons', 'app', 'dbmanager', 'scm', 'vm'];
 
 // Frontmatter fields that must be present and non-empty.
 const REQUIRED_FIELDS = [
@@ -44,11 +44,19 @@ const OPTIONAL_FIELDS = [
   'fingerprint',
 ];
 
-// Files never included in a .jext package.
+// Files never included in a .jext package. Includes the build toolchain — extensions author their
+// UI in TypeScript under src/ and `jext pack` builds the deployable www/ (see pack.js runBuild), so
+// the source and build config never ship inside the package.
 const ALWAYS_IGNORE = [
   '.git',
   '.github',
+  '.gitignore',
   'node_modules',
+  'src',
+  'package.json',
+  'package-lock.json',
+  'tsconfig.json',
+  'build.mjs',
   '.jextignore',
   JEXT_MANIFEST,
 ];
