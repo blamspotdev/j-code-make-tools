@@ -14,6 +14,18 @@ npm link
 
 Or run without linking: `node bin/jext.js <command>`.
 
+## Interactive mode
+
+Prefer a guided flow over remembering flags? Run the wizard:
+
+```bash
+jext interactive     # or just `jext` with no arguments in a terminal
+```
+
+It presents a menu — **pack**, **validate**, **init**, **index** — and asks for each input with a
+sensible `[default]` (Enter accepts it), then runs the same underlying command. Ctrl+C quits. In a
+non-interactive shell (pipe / CI) a bare `jext` prints usage instead of prompting.
+
 ## Commands
 
 ```bash

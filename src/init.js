@@ -70,4 +70,4 @@ function writeOnce(p, content) {
   fs.writeFileSync(p, content);
 }
 
-module.exports = { init };
+module.exports = { init, slug };
