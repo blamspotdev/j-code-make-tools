@@ -5,12 +5,14 @@ const { pack } = require('../src/pack');
 const { validate } = require('../src/validate');
 const { init } = require('../src/init');
 const { index } = require('../src/indexcmd');
+const { interactive } = require('../src/interactive');
 const { CliError, paint, C } = require('../src/util');
 const pkg = require('../package.json');
 
 const USAGE = `jext — JCode extension make tools (v${pkg.version})
 
 Usage:
+  jext interactive                                  Guided, menu-driven mode (also: run "jext" with no args in a terminal)
   jext pack <extensionDir> [-o <out.jext|outDir>] [--no-build]
                                                     Build (npm run build, if any) + compile into a .jext
   jext validate <extensionDir|file.jext>            Validate a .jehm header or a built .jext
@@ -51,11 +53,10 @@ function parseArgs(argv) {
   return { flags, positionals };
 }
 
-function main() {
+async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
-  const { flags, positionals } = parseArgs(rest);
 
-  if (!cmd || cmd === 'help' || cmd === '--help' || cmd === '-h') {
+  if (cmd === 'help' || cmd === '--help' || cmd === '-h') {
     process.stdout.write(USAGE);
     return;
   }
@@ -63,7 +64,18 @@ function main() {
     console.log(pkg.version);
     return;
   }
+  // No command: drop into the wizard when a person is at a terminal, otherwise print usage
+  // (so piping / CI never hangs waiting for input).
+  if (!cmd) {
+    if (process.stdin.isTTY) return interactive();
+    process.stdout.write(USAGE);
+    return;
+  }
+  if (cmd === 'interactive' || cmd === 'wizard' || cmd === 'menu' || cmd === 'i') {
+    return interactive();
+  }
 
+  const { flags, positionals } = parseArgs(rest);
   switch (cmd) {
     case 'pack': {
       if (!positionals[0]) throw new CliError('pack: missing <extensionDir>');
@@ -90,12 +102,10 @@ function main() {
   }
 }
 
-try {
-  main();
-} catch (e) {
+main().catch((e) => {
   if (e instanceof CliError) {
     console.error(paint(C.red, 'error: ') + e.message);
     process.exit(1);
   }
   throw e;
-}
+});

@@ -1,6 +1,6 @@
 {
   "name": "j-code-make-tools",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "JCode extension making tools — compile an extension folder into a .jext package and validate its .jehm header.",
   "bin": {
     "jext": "bin/jext.js"
