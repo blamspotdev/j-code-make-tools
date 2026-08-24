@@ -3,7 +3,7 @@
 const fs = require('fs');
 const yaml = require('js-yaml');
 const { JEHM_SCHEMA, EXTENSION_TYPES, REQUIRED_FIELDS } = require('./spec');
-const { isSemver, fail } = require('./util');
+const { isSemver, versionRangeError, fail } = require('./util');
 
 // A .jehm file is YAML frontmatter delimited by `---` lines, followed by a
 // Markdown body. Returns { header: object, body: string }.
@@ -46,11 +46,13 @@ function validateHeader(header) {
   if (header.uniqueName !== undefined && !/^[a-z0-9]+(\.[a-z0-9-]+)+$/.test(String(header.uniqueName))) {
     errs.push(`"uniqueName" should be reverse-DNS, lower-case, e.g. "jcode.lang.csharp" (got "${header.uniqueName}")`);
   }
-  for (const f of ['version', 'minJCodeVersion', 'targetJCodeVersion']) {
+  for (const f of ['version', 'minJCodeVersion', 'targetJCodeVersion', 'maxJCodeVersion']) {
     if (header[f] !== undefined && header[f] !== null && header[f] !== '' && !isSemver(header[f])) {
       errs.push(`"${f}" must be semver (major.minor.patch), got "${header[f]}"`);
     }
   }
+  const range = versionRangeError(header.minJCodeVersion, header.maxJCodeVersion);
+  if (range) errs.push(range);
   return errs;
 }
 
