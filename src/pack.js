@@ -6,7 +6,7 @@ const { spawnSync } = require('child_process');
 const AdmZip = require('adm-zip');
 const yaml = require('js-yaml');
 const { JEXT_MANIFEST, JEXT_FORMAT, EXTENSION_TYPES, ALWAYS_IGNORE } = require('./spec');
-const { sha256, sha256File, walkFiles, fail, step, ok, warn } = require('./util');
+const { sha256, sha256File, walkFiles, versionRangeError, fail, step, ok, warn } = require('./util');
 
 // The extension header now lives in extension.yaml (the .jehm file was retired). Normalize the fields
 // the package manifest + marketplace need. `id` is the install id (formerly `uniqueName`).
@@ -31,6 +31,7 @@ function readHeader(extDir) {
     shortDescription: y.shortDescription || y.description,
     minJCodeVersion: y.minJCodeVersion,
     targetJCodeVersion: y.targetJCodeVersion,
+    maxJCodeVersion: y.maxJCodeVersion,
     category: y.category,
     subcategory: y.subcategory,
     supportedArches: y.supportedArches,
@@ -46,6 +47,8 @@ function validateHeader(h) {
     if (!h[k]) errs.push(`missing required field "${k === 'uniqueName' ? 'id' : k}"`);
   }
   if (h.type && !EXTENSION_TYPES.includes(h.type)) errs.push(`unknown type "${h.type}" (allowed: ${EXTENSION_TYPES.join(', ')})`);
+  const range = versionRangeError(h.minJCodeVersion, h.maxJCodeVersion);
+  if (range) errs.push(range);
   return errs;
 }
 
@@ -133,6 +136,7 @@ function pack(extDir, opts = {}) {
     type: header.type,
     minJCodeVersion: header.minJCodeVersion,
     targetJCodeVersion: header.targetJCodeVersion,
+    maxJCodeVersion: header.maxJCodeVersion,
     files: fileEntries,
     fingerprint: { algo: 'sha256', value: fingerprintValue },
   };

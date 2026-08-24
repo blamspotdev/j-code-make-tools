@@ -63,6 +63,7 @@ function index(marketplaceDir, opts = {}) {
           uniqueName: y.id || y.uniqueName, name: y.name, version: y.version, type: y.type,
           publisher: y.publisher, authors: y.authors, shortDescription: y.shortDescription || y.description,
           minJCodeVersion: y.minJCodeVersion, targetJCodeVersion: y.targetJCodeVersion,
+          maxJCodeVersion: y.maxJCodeVersion,
           category: y.category, subcategory: y.subcategory, supportedArches: y.supportedArches,
           supportedDistros: y.supportedDistros, images: y.images, requires: y.requires, suggests: y.suggests,
         };
@@ -93,6 +94,8 @@ function index(marketplaceDir, opts = {}) {
       jext: `${distName}/${file}`,
       fingerprint: fingerprint,
     };
+    // Only when declared: an absent ceiling must not appear as a null in every entry.
+    if (header.maxJCodeVersion) entry.maxJCodeVersion = header.maxJCodeVersion;
     if (header.authors) entry.authors = header.authors;
     if (header.requires) entry.requires = header.requires;
     if (header.suggests) entry.suggests = header.suggests;

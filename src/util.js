@@ -86,6 +86,15 @@ function walkFiles(dir, ignore) {
   return out;
 }
 
+// A ceiling below the floor describes no JCode at all — the app would refuse the package on every
+// version there is. Returns a problem string, or null when the pair is fine (either side may be
+// absent, and a non-semver value is left to the semver check to report).
+function versionRangeError(min, max) {
+  if (!min || !max || !isSemver(min) || !isSemver(max)) return null;
+  if (compareSemver(min, max) <= 0) return null;
+  return `"maxJCodeVersion" (${max}) is below "minJCodeVersion" (${min}) — no JCode version can run this`;
+}
+
 module.exports = {
   paint,
   C,
@@ -100,5 +109,6 @@ module.exports = {
   parseSemver,
   isSemver,
   compareSemver,
+  versionRangeError,
   walkFiles,
 };

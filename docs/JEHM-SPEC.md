@@ -41,6 +41,7 @@ Rich description here. ![Sample](media/sample-1.png)
 | `shortDescription` | ✓ | string | One line for list rows. |
 | `minJCodeVersion` | ✓ | semver | Lowest JCode app version that can run this. |
 | `targetJCodeVersion` | ✓ | semver | JCode version this was built/tested against. |
+| `maxJCodeVersion` | | semver | Highest JCode app version that can run this. Absent means no ceiling; the app refuses to install above it. Must not be below `minJCodeVersion`. |
 | `publisher` | | string | |
 | `category` | | string | e.g. `Languages`, `Templates`. |
 | `subcategory` | | string | e.g. `C#`. |

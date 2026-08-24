@@ -23,6 +23,7 @@ const REQUIRED_FIELDS = [
   'shortDescription',
   'minJCodeVersion',
   'targetJCodeVersion',
+  'maxJCodeVersion',
 ];
 
 // Optional frontmatter fields the toolchain recognizes. `supportedDistros` /
