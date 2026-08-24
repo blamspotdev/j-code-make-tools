@@ -18,7 +18,8 @@ Usage:
   jext validate <extensionDir|file.jext>            Validate a .jehm header or a built .jext
   jext init [dir] [--type <t>] [--name <n>] [--id <uniqueName>] [--publisher <p>]
                                                     Scaffold a new extension (.jehm + manifest)
-  jext index <marketplaceDir> [--dist <folder>]     Regenerate marketplace.yaml from packed .jext files
+  jext index <marketplaceDir> [--dist <folder>] [--out <index.yaml>]
+                                                    Regenerate an index from packed .jext files
   jext help | --version
 
 Types: language, templates, app, dbmanager, scm, vm, formatter, theme, icons
@@ -94,7 +95,7 @@ async function main() {
     }
     case 'index': {
       if (!positionals[0]) throw new CliError('index: missing <marketplaceDir>');
-      index(positionals[0], { dist: flags.dist });
+      index(positionals[0], { dist: flags.dist, out: flags.out });
       break;
     }
     default:
