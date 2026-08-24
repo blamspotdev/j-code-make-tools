@@ -62,6 +62,7 @@ function index(marketplaceDir, opts = {}) {
         header = {
           uniqueName: y.id || y.uniqueName, name: y.name, version: y.version, type: y.type,
           publisher: y.publisher, authors: y.authors, shortDescription: y.shortDescription || y.description,
+          longDescription: y.longDescription, samples: y.samples,
           minJCodeVersion: y.minJCodeVersion, targetJCodeVersion: y.targetJCodeVersion,
           maxJCodeVersion: y.maxJCodeVersion,
           category: y.category, subcategory: y.subcategory, supportedArches: y.supportedArches,
@@ -96,6 +97,10 @@ function index(marketplaceDir, opts = {}) {
     };
     // Only when declared: an absent ceiling must not appear as a null in every entry.
     if (header.maxJCodeVersion) entry.maxJCodeVersion = header.maxJCodeVersion;
+    // The detail page has room for more than one sentence and the app already reads both — they
+    // simply never reached the index, so every extension read as a single line.
+    if (header.longDescription) entry.longDescription = header.longDescription;
+    if (header.samples) entry.samples = header.samples;
     if (header.authors) entry.authors = header.authors;
     if (header.requires) entry.requires = header.requires;
     if (header.suggests) entry.suggests = header.suggests;
