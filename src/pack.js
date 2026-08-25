@@ -29,6 +29,8 @@ function readHeader(extDir) {
     publisher: y.publisher,
     authors: y.authors,
     shortDescription: y.shortDescription || y.description,
+    longDescription: y.longDescription,
+    samples: y.samples,
     minJCodeVersion: y.minJCodeVersion,
     targetJCodeVersion: y.targetJCodeVersion,
     maxJCodeVersion: y.maxJCodeVersion,

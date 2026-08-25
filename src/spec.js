@@ -23,6 +23,8 @@ const REQUIRED_FIELDS = [
   'shortDescription',
   'minJCodeVersion',
   'targetJCodeVersion',
+  'longDescription',
+  'samples',
   'maxJCodeVersion',
 ];
 
