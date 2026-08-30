@@ -47,4 +47,17 @@ jext index path/to/j-code-marketplace                # regenerate marketplace.ya
 The JCode app installs extensions **only** from `.jext` packages, verifying the
 fingerprint and the `minJCodeVersion` before extracting.
 
+## Writing an extension
+
+- [**`docs/CREATING-EXTENSIONS.md`**](docs/CREATING-EXTENSIONS.md) — the walkthrough:
+  what the manifest holds, worked `language` and `templates` examples, icons, and how
+  the app installs the result.
+- [**`docs/EXTENSION-API.md`**](docs/EXTENSION-API.md) — the bridge a web-frontend
+  extension (`type: app`, `type: dbmanager`) talks to the IDE and the Linux runtime
+  through.
+
+These lived in the marketplace repo. They belong with the tool that builds what they
+describe: the marketplace publishes finished packages, and an author reading about
+how to make one should not have to start in the repo that distributes them.
+
 > No GitHub Actions / CI: everything runs locally via this CLI.
