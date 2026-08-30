@@ -67,14 +67,30 @@ function compareSemver(a, b) {
 
 // Recursively list files under `dir` as POSIX-relative paths, skipping any path
 // segment in `ignore` (exact segment match).
+/**
+ * Every file under `dir`, minus what `ignore` excludes.
+ *
+ * An entry is matched by BASE NAME at any depth -- `build` drops every `build` directory in the
+ * tree. That is usually what someone means and occasionally the opposite: an extension whose Gradle
+ * root is its package root has to exclude the wrapper directory `gradle/`, and doing it by name also
+ * dropped `languages/gradle/`, silently shipping a language pack short of a language.
+ *
+ * An entry beginning with `/` is anchored to the package root instead, so `/gradle` excludes the
+ * wrapper and leaves `languages/gradle` alone. Unanchored entries keep their old meaning.
+ */
 function walkFiles(dir, ignore) {
-  const ignoreSet = new Set(ignore || []);
+  const names = new Set();
+  const rooted = new Set();
+  for (const entry of ignore || []) {
+    if (entry.startsWith('/')) rooted.add(entry.slice(1).replace(/\/+$/, ''));
+    else names.add(entry);
+  }
   const out = [];
   (function rec(abs, rel) {
     for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
-      if (ignoreSet.has(entry.name)) continue;
-      const childAbs = path.join(abs, entry.name);
       const childRel = rel ? rel + '/' + entry.name : entry.name;
+      if (names.has(entry.name) || rooted.has(childRel)) continue;
+      const childAbs = path.join(abs, entry.name);
       if (entry.isDirectory()) {
         rec(childAbs, childRel);
       } else if (entry.isFile()) {
