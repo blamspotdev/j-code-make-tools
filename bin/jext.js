@@ -16,9 +16,9 @@ Usage:
   jext interactive                                  Guided, menu-driven mode (also: run "jext" with no args in a terminal)
   jext pack <extensionDir> [-o <out.jext|outDir>] [--no-build]
                                                     Build (npm run build, if any) + compile into a .jext
-  jext validate <extensionDir|file.jext>            Validate a .jehm header or a built .jext
+  jext validate <extensionDir|file.jext>            Validate an extension folder or a built .jext
   jext init [dir] [--type <t>] [--name <n>] [--id <uniqueName>] [--publisher <p>]
-                                                    Scaffold a new extension (.jehm + manifest)
+                                                    Scaffold a new extension (extension.yaml + media/)
   jext index <marketplaceDir> [--dist <folder>] [--out <index.yaml>]
                                                     Regenerate an index from packed .jext files
   jext help | --version

@@ -8,19 +8,14 @@ const yaml = require('js-yaml');
 const { JEXT_MANIFEST, JEXT_FORMAT, EXTENSION_TYPES, ALWAYS_IGNORE } = require('./spec');
 const { sha256, sha256File, walkFiles, versionRangeError, fail, step, ok, warn } = require('./util');
 
-// The extension header now lives in extension.yaml (the .jehm file was retired). Normalize the fields
-// the package manifest + marketplace need. `id` is the install id (formerly `uniqueName`).
-function readHeader(extDir) {
-  const yamlPath = path.join(extDir, 'extension.yaml');
-  if (!fs.existsSync(yamlPath)) {
-    fail(`no extension.yaml at the extension root (${extDir}). Run "jext init" to create one.`);
-  }
-  let y;
-  try {
-    y = yaml.load(fs.readFileSync(yamlPath, 'utf8')) || {};
-  } catch (e) {
-    fail(`extension.yaml is not valid YAML: ${e.message}`);
-  }
+// The extension header lives in extension.yaml. Normalize the fields the package manifest and the
+// marketplace need; `id` is the install id (the retired .jehm called it `uniqueName`, which the
+// index and the app still read under that name).
+//
+// Split from readHeader so `jext index` can normalize a header it pulled out of a packed .jext
+// rather than off disk — it was carrying a second copy of this mapping, which is the kind of
+// duplicate that quietly drifts a field at a time.
+function normalizeHeader(y) {
   return {
     uniqueName: y.id || y.uniqueName,
     name: y.name,
@@ -39,8 +34,25 @@ function readHeader(extDir) {
     supportedArches: y.supportedArches,
     supportedDistros: y.supportedDistros,
     images: y.images,
+    requires: y.requires,
+    suggests: y.suggests,
     entry: y.entry,
   };
+}
+
+// The header of the extension in `extDir`.
+function readHeader(extDir) {
+  const yamlPath = path.join(extDir, 'extension.yaml');
+  if (!fs.existsSync(yamlPath)) {
+    fail(`no extension.yaml at the extension root (${extDir}). Run "jext init" to create one.`);
+  }
+  let y;
+  try {
+    y = yaml.load(fs.readFileSync(yamlPath, 'utf8')) || {};
+  } catch (e) {
+    fail(`extension.yaml is not valid YAML: ${e.message}`);
+  }
+  return normalizeHeader(y);
 }
 
 function validateHeader(h) {
@@ -174,4 +186,4 @@ function collectImagePaths(header) {
   return imgs;
 }
 
-module.exports = { pack, collectImagePaths, readHeader, validateHeader };
+module.exports = { pack, collectImagePaths, readHeader, normalizeHeader, validateHeader };
