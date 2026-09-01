@@ -5,9 +5,8 @@ const path = require('path');
 const AdmZip = require('adm-zip');
 const yaml = require('js-yaml');
 const { validateIconPack } = require('./iconpacks');
-const jehm = require('./jehm');
-const { collectImagePaths, readHeader, validateHeader } = require('./pack');
-const { JEHM_FILE, JEXT_MANIFEST } = require('./spec');
+const { collectImagePaths, readHeader, normalizeHeader, validateHeader } = require('./pack');
+const { JEXT_MANIFEST } = require('./spec');
 const { sha256, fail, ok, step, warn } = require('./util');
 
 // Validate either an extension directory or a built .jext package.
@@ -20,14 +19,10 @@ function validate(target) {
 }
 
 function validateDir(dir) {
-  // The header moved into extension.yaml (the .jehm was retired), and `pack` already reads it from
-  // there — so validating a modern package must not still insist on a file it no longer ships, and
-  // must hold it to the rules `pack` will apply rather than the .jehm schema's longer required list.
-  // The two disagreeing means `jext validate` can refuse a package `jext pack` happily builds.
-  const legacy = path.join(dir, JEHM_FILE);
-  const hasLegacyHeader = fs.existsSync(legacy);
-  const header = hasLegacyHeader ? jehm.parseFile(legacy).header : readHeader(dir);
-  const errs = hasLegacyHeader ? jehm.validateHeader(header) : validateHeader(header);
+  // Read and checked exactly as `pack` will: the two disagreeing is how `jext validate` came to
+  // refuse packages `jext pack` builds without complaint.
+  const header = readHeader(dir);
+  const errs = validateHeader(header);
   const manifestRel = (header.entry && header.entry.manifest) || 'extension.yaml';
   if (['language', 'templates', 'formatter'].includes(header.type) && !fs.existsSync(path.join(dir, manifestRel))) {
     errs.push(`functional manifest "${manifestRel}" not found`);
@@ -44,7 +39,7 @@ function validateDir(dir) {
   return errs.length === 0;
 }
 
-// The functional manifest, for the sections the .jehm header does not carry (contributes.*).
+// The manifest as written, for sections the normalized header does not carry (contributes.*).
 // A missing or unreadable one is not an error here — validateDir already reports that where it is.
 function readManifest(dir, manifestRel) {
   const file = path.join(dir, manifestRel);
@@ -65,10 +60,15 @@ function validatePackage(jextPath) {
   } catch (e) {
     fail(`cannot read .jext (not a valid zip?): ${e.message}`);
   }
-  const jehmEntry = zip.getEntry(JEHM_FILE);
-  if (!jehmEntry) fail(`${path.basename(jextPath)} has no ${JEHM_FILE}`);
-  const { header } = jehm.parse(zip.readAsText(jehmEntry), JEHM_FILE);
-  const errs = jehm.validateHeader(header);
+  const yamlEntry = zip.getEntry('extension.yaml');
+  if (!yamlEntry) fail(`${path.basename(jextPath)} has no extension.yaml`);
+  let header;
+  try {
+    header = normalizeHeader(yaml.load(zip.readAsText(yamlEntry)) || {});
+  } catch (e) {
+    fail(`${path.basename(jextPath)}: extension.yaml is not valid YAML: ${e.message}`);
+  }
+  const errs = validateHeader(header);
 
   const manEntry = zip.getEntry(JEXT_MANIFEST);
   if (!manEntry) {
