@@ -11,7 +11,21 @@ const JEXT_FORMAT = 1;
 
 // Extension types the marketplace/app understands. `language` and `templates`
 // are functional today; the rest are reserved for forward compatibility.
-const EXTENSION_TYPES = ['language', 'templates', 'formatter', 'theme', 'icons', 'app', 'dbmanager', 'scm', 'vm'];
+const EXTENSION_TYPES = [
+  'language',
+  'templates',
+  'formatter',
+  'theme',
+  // An icon pack. The app accepts all four spellings (ExtensionType.from); `iconpack` is canonical.
+  'iconpack',
+  'icon-pack',
+  'icons',
+  'icon-theme',
+  'app',
+  'dbmanager',
+  'scm',
+  'vm',
+];
 
 // Frontmatter fields that must be present and non-empty.
 const REQUIRED_FIELDS = [
