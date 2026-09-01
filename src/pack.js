@@ -174,4 +174,4 @@ function collectImagePaths(header) {
   return imgs;
 }
 
-module.exports = { pack, collectImagePaths };
+module.exports = { pack, collectImagePaths, readHeader, validateHeader };

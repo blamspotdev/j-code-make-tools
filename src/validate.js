@@ -3,8 +3,10 @@
 const fs = require('fs');
 const path = require('path');
 const AdmZip = require('adm-zip');
+const yaml = require('js-yaml');
+const { validateIconPack } = require('./iconpacks');
 const jehm = require('./jehm');
-const { collectImagePaths } = require('./pack');
+const { collectImagePaths, readHeader, validateHeader } = require('./pack');
 const { JEHM_FILE, JEXT_MANIFEST } = require('./spec');
 const { sha256, fail, ok, step, warn } = require('./util');
 
@@ -18,10 +20,14 @@ function validate(target) {
 }
 
 function validateDir(dir) {
-  const jehmPath = path.join(dir, JEHM_FILE);
-  if (!fs.existsSync(jehmPath)) fail(`no ${JEHM_FILE} at ${dir}`);
-  const { header } = jehm.parseFile(jehmPath);
-  const errs = jehm.validateHeader(header);
+  // The header moved into extension.yaml (the .jehm was retired), and `pack` already reads it from
+  // there — so validating a modern package must not still insist on a file it no longer ships, and
+  // must hold it to the rules `pack` will apply rather than the .jehm schema's longer required list.
+  // The two disagreeing means `jext validate` can refuse a package `jext pack` happily builds.
+  const legacy = path.join(dir, JEHM_FILE);
+  const hasLegacyHeader = fs.existsSync(legacy);
+  const header = hasLegacyHeader ? jehm.parseFile(legacy).header : readHeader(dir);
+  const errs = hasLegacyHeader ? jehm.validateHeader(header) : validateHeader(header);
   const manifestRel = (header.entry && header.entry.manifest) || 'extension.yaml';
   if (['language', 'templates', 'formatter'].includes(header.type) && !fs.existsSync(path.join(dir, manifestRel))) {
     errs.push(`functional manifest "${manifestRel}" not found`);
@@ -29,8 +35,27 @@ function validateDir(dir) {
   for (const img of collectImagePaths(header)) {
     if (!fs.existsSync(path.join(dir, img))) warn(`image "${img}" referenced in header but not present`);
   }
+  // Icon sets are found by convention, so this runs for every extension, not only a declared pack.
+  const icons = validateIconPack(dir, header, readManifest(dir, manifestRel));
+  errs.push(...icons.errs);
+  icons.warns.forEach((w) => warn(w));
+  icons.notes.forEach((n) => step(n));
   finish(header, errs, dir);
   return errs.length === 0;
+}
+
+// The functional manifest, for the sections the .jehm header does not carry (contributes.*).
+// A missing or unreadable one is not an error here — validateDir already reports that where it is.
+function readManifest(dir, manifestRel) {
+  const file = path.join(dir, manifestRel);
+  if (!fs.existsSync(file)) return null;
+  try {
+    const doc = yaml.load(fs.readFileSync(file, 'utf8'));
+    return doc && typeof doc === 'object' && !Array.isArray(doc) ? doc : null;
+  } catch (e) {
+    warn(`${manifestRel}: invalid YAML — ${e.message}`);
+    return null;
+  }
 }
 
 function validatePackage(jextPath) {

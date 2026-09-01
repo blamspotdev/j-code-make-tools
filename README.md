@@ -55,6 +55,8 @@ fingerprint and the `minJCodeVersion` before extracting.
 - [**`docs/EXTENSION-API.md`**](docs/EXTENSION-API.md) — the bridge a web-frontend
   extension (`type: app`, `type: dbmanager`) talks to the IDE and the Linux runtime
   through.
+- [**`docs/ICON-PACKS.md`**](docs/ICON-PACKS.md) — `type: iconpack`: the two icon sets
+  (UI chrome and file/folder badges), the index format, and how art is matched to files.
 
 These lived in the marketplace repo. They belong with the tool that builds what they
 describe: the marketplace publishes finished packages, and an author reading about
