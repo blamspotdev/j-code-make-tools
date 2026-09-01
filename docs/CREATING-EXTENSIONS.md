@@ -298,6 +298,8 @@ same way a Visual Studio Code extension can be closed-source.
 
 ## Reference
 
+- [Icon packs](ICON-PACKS.md) — `type: iconpack`: UI and file icon sets, the index
+  format, and how art is matched to files.
 - [JEHM spec](https://github.com/blamspotdev/j-code-make-tools/blob/main/docs/JEHM-SPEC.md) — header fields.
 - [JEXT spec](https://github.com/blamspotdev/j-code-make-tools/blob/main/docs/JEXT-SPEC.md) — package format + install/verify flow.
 - This repo's [`extensions/`](extensions) submodules — real, working examples
